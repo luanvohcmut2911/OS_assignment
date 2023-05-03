@@ -27,17 +27,17 @@ struct pcb_t *dequeue(struct queue_t *q)
          * */
         if (!empty(q))
         {
-                uint32_t highest_priority = 0;
-                uint32_t id;
+                // uint32_t highest_priority = 0;
+                uint32_t id = 0;
 
-                struct pcb_t *pointer_to_highest_priority_proc;
+                struct pcb_t *pointer_to_highest_priority_proc = q->proc[0];
 
                 //* Search for the highest priority in the queue
                 for (int i = 0; i < q->size; i++)
                 {
-                        if (highest_priority < q->proc[i]->prio)
+                        if (pointer_to_highest_priority_proc->prio < q->proc[i]->prio)
                         {
-                                highest_priority = q->proc[i]->prio;
+                                // highest_priority = q->proc[i]->prio;
                                 id = i;
                                 pointer_to_highest_priority_proc = q->proc[i];
                         }
