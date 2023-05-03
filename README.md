@@ -1,5 +1,8 @@
 # OS_assignment
 ## Update
+```
+#sched.c
+```
 The code defines functions related to process scheduling in an operating system.
 
 The `init_scheduler` function initializes the ready queue, run queue and queue lock.
