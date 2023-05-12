@@ -94,15 +94,14 @@ int vmap_page_range(struct pcb_t *caller, // process call
   ret_rg->rg_end = ret_rg->rg_start = addr; // at least the very first space is usable
 
   fpit->fp_next = frames;
-
   /* TODO map range of frame to address space 
    *      [addr to addr + pgnum*PAGING_PAGESZ
    *      in page table caller->mm->pgd[]
    */
-
+  // caller->mm->pgd[addr + pgnum*PAGING_PAGESZ] = fpit; // NEW TODO
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
-   enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
+  enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
 
 
   return 0;
@@ -124,8 +123,14 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
   {
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
    {
+     struct framephy_struct *tmp = (struct framephy_struct*)malloc(sizeof(struct framephy_struct));
+     tmp->fpn = fpn;
+     tmp->fp_next = NULL;
+     *frm_lst = tmp;
      
    } else {  // ERROR CODE of obtaining somes but not enough frames
+    // swapping ?
+    
    } 
  }
 

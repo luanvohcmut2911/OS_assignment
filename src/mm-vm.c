@@ -18,14 +18,19 @@ int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
+  struct vm_rg_struct *tmp = (struct vm_rg_struct*)malloc(sizeof(struct vm_rg_struct));
+  tmp->rg_end = rg_elmt.rg_end;
+  tmp->rg_next = rg_elmt.rg_next;
+  tmp->rg_start = rg_elmt.rg_start;
+
   if (rg_elmt.rg_start >= rg_elmt.rg_end)
     return -1;
 
   if (rg_node != NULL)
-    rg_elmt.rg_next = rg_node;
+    tmp->rg_next = rg_node;
 
   /* Enlist the new region */
-  mm->mmap->vm_freerg_list = &rg_elmt;
+  mm->mmap->vm_freerg_list = tmp;
 
   return 0;
 }
@@ -80,7 +85,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
 {
   /*Allocate at the toproof */
   struct vm_rg_struct rgnode;
-
+  rgnode = *get_symrg_byid(caller->mm, rgid);
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
   {
     caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
@@ -130,7 +135,7 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
     return -1;
 
   /* TODO: Manage the collect freed region to freerg_list */
-
+  rgnode = *get_symrg_byid(caller->mm, rgid);
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
 
@@ -386,7 +391,9 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
 
   newrg->rg_start = cur_vma->sbrk;
   newrg->rg_end = newrg->rg_start + size;
-
+  // if(newrg->rg_end > cur_vma->sbrk){
+  //   return NULL;
+  // }
   return newrg;
 }
 
@@ -399,8 +406,10 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
  */
 int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int vmaend)
 {
-  //struct vm_area_struct *vma = caller->mm->mmap;
-
+  // struct vm_area_struct *vma = caller->mm->mmap;
+  // if((vma->vm_start <= vmastart && vma->vm_end < vmastart) || (vma->vm_start >= vmaend && vma->vm_end < vmaend)){
+  //   return 0;
+  // }
   /* TODO validate the planned memory area is not overlapped */
 
   return 0;
@@ -445,7 +454,8 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 int find_victim_page(struct mm_struct *mm, int *retpgn) 
 {
   struct pgn_t *pg = mm->fifo_pgn;
-
+  *retpgn =pg->pgn;
+  mm->fifo_pgn = mm->fifo_pgn->pg_next;
   /* TODO: Implement the theorical mechanism to find the victim page */
 
   free(pg);
