@@ -6,7 +6,7 @@
 
 #include "mm.h"
 #include <stdlib.h>
-
+#include <stdio.h>
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
  *  @mp: memphy struct
@@ -151,7 +151,23 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
     * No garbage collector acting then it not been released
     */
    free(fp);
+   return 0;
+}
 
+int MEMPHY_get_usedfp(struct memphy_struct *mp, int *retfpn){
+   // struct framephy_struct *fp = mp->used_fp_list;
+
+   // if (fp == NULL)
+   //    print_list_fp(mp->used_fp_list);
+   //    return -1;
+
+   // *retfpn = fp->fpn;
+   // mp->free_fp_list = fp->fp_next;
+   // print_list_fp(mp->used_fp_list);
+   // /* MEMPHY is iteratively used up until its exhausted
+   //  * No garbage collector acting then it not been released
+   //  */
+   // free(fp);
    return 0;
 }
 
@@ -173,7 +189,6 @@ int MEMPHY_put_freefp(struct memphy_struct *mp, int fpn)
    newnode->fpn = fpn;
    newnode->fp_next = fp;
    mp->free_fp_list = newnode;
-
    return 0;
 }
 

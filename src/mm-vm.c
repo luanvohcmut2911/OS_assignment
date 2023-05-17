@@ -8,6 +8,9 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
+
+// static pthread_mutex_t mtx_lock;
 
 /*enlist_vm_freerg_list - add new rg to freerg_list
  *@mm: memory region
@@ -92,7 +95,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
     caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
 
     *alloc_addr = rgnode.rg_start;
-
+    // print_list_fp(caller->mram->used_fp_list);
     return 0;
   }
 
@@ -116,7 +119,8 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
 
   *alloc_addr = old_sbrk;
-
+  // print_list_fp(caller->mram->used_fp_list);
+  // pthread_mutex_unlock(&mtx_lock);
   return 0;
 }
 
@@ -130,7 +134,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
 int __free(struct pcb_t *caller, int vmaid, int rgid)
 {
   struct vm_rg_struct rgnode;
-
+  // pthread_mutex_lock(&mtx_lock);
   if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
     return -1;
 
@@ -138,7 +142,37 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   rgnode = *get_symrg_byid(caller->mm, rgid);
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
+  // delete element from used_fp_list TODO
+  // struct framephy_struct *tmp = caller->mram->used_fp_list;
+  // while(tmp!=NULL){
+  //   if(tmp->fpn!=rgid){
+  //     tmp = tmp->fp_next;
+  //   }
+  //   else break;
+  // }
+  // int size_frame = caller->mm->symrgtbl[rgid].rg_end - caller->mm->symrgtbl[rgid].rg_start;
+  // int delete_frame_num = (size_frame + PAGING_PAGESZ) / PAGING_PAGESZ;
+  // if(tmp == caller->mram->used_fp_list){
+  //   for(int i=0;i<delete_frame_num;i++){
+  //     caller->mram->used_fp_list = tmp->fp_next;
+  //   }
+  // }
+  // else{
+  //   struct framephy_struct *tmp1 = caller->mram->used_fp_list;
+  //   while(tmp1->fp_next != tmp){
+  //     tmp1 = tmp1->fp_next;
+  //   }
+  //   if(tmp->fp_next == NULL){
+  //     tmp1->fp_next = NULL;
+  //   }
+  //   else{
+  //     tmp1 -> fp_next = tmp->fp_next;
+  //   }
+  // }
+  // free(tmp);
 
+  // print_list_fp(caller->mram->used_fp_list);
+  // pthread_mutex_unlock(&mtx_lock);
   return 0;
 }
 
@@ -176,7 +210,7 @@ int pgfree_data(struct pcb_t *proc, uint32_t reg_index)
 int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 {
   uint32_t pte = mm->pgd[pgn];
- 
+  
   if (!PAGING_PAGE_PRESENT(pte))
   { /* Page is not online, make it actively living */
     int vicpgn, swpfpn; 
@@ -188,10 +222,8 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     /* TODO: Play with your paging theory here */
     /* Find victim page */
     find_victim_page(caller->mm, &vicpgn);
-
     /* Get free frame in MEMSWP */
     MEMPHY_get_freefp(caller->active_mswp, &swpfpn);
-
 
     /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
     /* Copy victim frame to swap */
@@ -370,7 +402,6 @@ int free_pcb_memph(struct pcb_t *caller)
       MEMPHY_put_freefp(caller->active_mswp, fpn);    
     }
   }
-
   return 0;
 }
 
@@ -391,9 +422,9 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
 
   newrg->rg_start = cur_vma->sbrk;
   newrg->rg_end = newrg->rg_start + size;
-  // if(newrg->rg_end > cur_vma->sbrk){
-  //   return NULL;
-  // }
+  if(newrg->rg_end > cur_vma->sbrk){
+    newrg->rg_end = cur_vma->sbrk; // TODO
+  }
   return newrg;
 }
 
@@ -406,13 +437,13 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
  */
 int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int vmaend)
 {
-  // struct vm_area_struct *vma = caller->mm->mmap;
-  // if((vma->vm_start <= vmastart && vma->vm_end < vmastart) || (vma->vm_start >= vmaend && vma->vm_end < vmaend)){
-  //   return 0;
-  // }
+  struct vm_area_struct *vma = caller->mm->mmap;
+  if((vma->vm_start <= vmastart && vma->vm_end >= vmaend)){
+    return 0;
+  }
   /* TODO validate the planned memory area is not overlapped */
 
-  return 0;
+  return -1;
 }
 
 /*inc_vma_limit - increase vm area limits to reserve space for new variable

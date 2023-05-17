@@ -51,7 +51,7 @@ int init_pte(uint32_t *pte,
  */
 int pte_set_swap(uint32_t *pte, int swptyp, int swpoff)
 {
-  SETBIT(*pte, PAGING_PTE_PRESENT_MASK);
+  CLRBIT(*pte, PAGING_PTE_PRESENT_MASK);
   SETBIT(*pte, PAGING_PTE_SWAPPED_MASK);
 
   SETVAL(*pte, swptyp, PAGING_PTE_SWPTYP_MASK, PAGING_PTE_SWPTYP_LOBIT);
@@ -86,22 +86,34 @@ int vmap_page_range(struct pcb_t *caller, // process call
               struct vm_rg_struct *ret_rg)// return mapped region, the real mapped fp
 {                                         // no guarantee all given pages are mapped
   //uint32_t * pte = malloc(sizeof(uint32_t));
-  struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
+  // struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
   //int  fpn;
-  int pgit = 0;
+  // int pgit = 0;
   int pgn = PAGING_PGN(addr);
 
   ret_rg->rg_end = ret_rg->rg_start = addr; // at least the very first space is usable
 
-  fpit->fp_next = frames;
+  // fpit = frames;
   /* TODO map range of frame to address space 
    *      [addr to addr + pgnum*PAGING_PAGESZ
    *      in page table caller->mm->pgd[]
    */
-  // caller->mm->pgd[addr + pgnum*PAGING_PAGESZ] = fpit; // NEW TODO
+  struct framephy_struct *tmp = frames;
+  if(tmp){
+    for(int i=0;i<pgnum;i++){
+      pte_set_fpn(&caller->mm->pgd[pgn+i],tmp->fpn);
+      if(tmp->fp_next){
+        tmp = tmp->fp_next;
+      }
+      else{
+        break;
+      }
+      enlist_pgn_node(&caller->mm->fifo_pgn, pgn+i);
+    }
+  }
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
-  enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
+  
 
 
   return 0;
@@ -125,11 +137,12 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
    {
      struct framephy_struct *tmp = (struct framephy_struct*)malloc(sizeof(struct framephy_struct));
      tmp->fpn = fpn;
-     tmp->fp_next = NULL;
+     tmp->fp_next = caller->mram->used_fp_list;
+     caller->mram->used_fp_list = tmp;
      *frm_lst = tmp;
-     
+    //  printf("After allocating frame in ram \n");
+    //  print_list_fp(caller->mram->used_fp_list);
    } else {  // ERROR CODE of obtaining somes but not enough frames
-    // swapping ?
     
    } 
  }
@@ -149,6 +162,7 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
  */
 int vm_map_ram(struct pcb_t *caller, int astart, int aend, int mapstart, int incpgnum, struct vm_rg_struct *ret_rg)
 {
+
   struct framephy_struct *frm_lst = NULL;
   int ret_alloc;
 
@@ -345,7 +359,6 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
   {
      printf("%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
   }
-
   return 0;
 }
 
