@@ -143,7 +143,7 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
     //  printf("After allocating frame in ram \n");
     //  print_list_fp(caller->mram->used_fp_list);
    } else {  // ERROR CODE of obtaining somes but not enough frames
-    
+      
    } 
  }
 

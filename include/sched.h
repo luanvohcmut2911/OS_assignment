@@ -14,6 +14,8 @@ int queue_empty(void);
 void init_scheduler(void);
 void finish_scheduler(void);
 
+int decrease_time(struct pcb_t * proc);
+
 /* Get the next process from ready queue */
 struct pcb_t * get_proc(void);
 

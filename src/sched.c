@@ -11,6 +11,7 @@ static pthread_mutex_t queue_lock;
 
 #ifdef MLQ_SCHED
 static struct queue_t mlq_ready_queue[MAX_PRIO];
+static int time_left_queue[MAX_PRIO];
 #endif
 
 int queue_empty(void) {
@@ -23,12 +24,25 @@ int queue_empty(void) {
 	return (empty(&ready_queue) && empty(&run_queue));
 }
 
+int decrease_time(struct pcb_t *proc){ // check MLQ policy for a process
+	int curr_slot = 1;
+	if(proc!=NULL){
+		curr_slot = --time_left_queue[proc->prio];
+		if(curr_slot == 0){
+			enqueue(&mlq_ready_queue[proc->prio], proc);
+		}
+	}
+	return curr_slot;
+}
+
+
 void init_scheduler(void) {
 #ifdef MLQ_SCHED
     int i ;
-
-	for (i = 0; i < MAX_PRIO; i ++)
+	for (i = 0; i < MAX_PRIO; i ++){
 		mlq_ready_queue[i].size = 0;
+		time_left_queue[i] = MAX_PRIO - i;
+	}
 #endif
 	ready_queue.size = 0;
 	run_queue.size = 0;
