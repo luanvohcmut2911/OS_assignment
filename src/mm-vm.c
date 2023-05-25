@@ -142,37 +142,6 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   rgnode = *get_symrg_byid(caller->mm, rgid);
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
-  // delete element from used_fp_list TODO
-  // struct framephy_struct *tmp = caller->mram->used_fp_list;
-  // while(tmp!=NULL){
-  //   if(tmp->fpn!=rgid){
-  //     tmp = tmp->fp_next;
-  //   }
-  //   else break;
-  // }
-  // int size_frame = caller->mm->symrgtbl[rgid].rg_end - caller->mm->symrgtbl[rgid].rg_start;
-  // int delete_frame_num = (size_frame + PAGING_PAGESZ) / PAGING_PAGESZ;
-  // if(tmp == caller->mram->used_fp_list){
-  //   for(int i=0;i<delete_frame_num;i++){
-  //     caller->mram->used_fp_list = tmp->fp_next;
-  //   }
-  // }
-  // else{
-  //   struct framephy_struct *tmp1 = caller->mram->used_fp_list;
-  //   while(tmp1->fp_next != tmp){
-  //     tmp1 = tmp1->fp_next;
-  //   }
-  //   if(tmp->fp_next == NULL){
-  //     tmp1->fp_next = NULL;
-  //   }
-  //   else{
-  //     tmp1 -> fp_next = tmp->fp_next;
-  //   }
-  // }
-  // free(tmp);
-
-  // print_list_fp(caller->mram->used_fp_list);
-  // pthread_mutex_unlock(&mtx_lock);
   return 0;
 }
 
